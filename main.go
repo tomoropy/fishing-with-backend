@@ -7,16 +7,17 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/tomoropy/fishing-with-backend/api"
 	db "github.com/tomoropy/fishing-with-backend/db/sqlc"
+	"github.com/tomoropy/fishing-with-backend/util"
 )
 
-const (
-	dbDriver      = "postgres"
-	dbSource      = "postgresql://root:secret@localhost:5432/fishing_with?sslmode=disable"
-	serverAddress = "0.0.0.0:8080"
-)
 
 func main() {
-	conn, err := sql.Open(dbDriver, dbSource)
+	config, err := util.LoadConfig(".")
+	if err != nil {
+		log.Fatalln("cannnot load confg:", err)
+	}
+	
+	conn, err := sql.Open(config.DBDriver, config.DBSource)
 	if err != nil {
 		log.Fatalln("cannot conenct to db:", err)
 	}
@@ -24,7 +25,7 @@ func main() {
 	store := db.New(conn)
 	server := api.NewServer(store)
 
-	err = server.Start(serverAddress)
+	err = server.Start(config.ServerAddress)
 	if err != nil {
 		log.Fatalln("cannot start server:", err)
 	}
