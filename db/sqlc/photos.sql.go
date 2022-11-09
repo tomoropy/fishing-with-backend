@@ -65,7 +65,7 @@ func (q *Queries) UserPhotoList(ctx context.Context, arg UserPhotoListParams) ([
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Photos
+	items := []Photos{}
 	for rows.Next() {
 		var i Photos
 		if err := rows.Scan(
