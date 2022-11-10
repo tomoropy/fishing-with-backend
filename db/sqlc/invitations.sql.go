@@ -123,7 +123,7 @@ func (q *Queries) ListInvitation(ctx context.Context, arg ListInvitationParams) 
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Invitations
+	items := []Invitations{}
 	for rows.Next() {
 		var i Invitations
 		if err := rows.Scan(
@@ -171,7 +171,7 @@ func (q *Queries) ListInvitationByUser(ctx context.Context, arg ListInvitationBy
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Invitations
+	items := []Invitations{}
 	for rows.Next() {
 		var i Invitations
 		if err := rows.Scan(

@@ -85,7 +85,7 @@ func (q *Queries) ListUser(ctx context.Context, arg ListUserParams) ([]Users, er
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Users
+	items := []Users{}
 	for rows.Next() {
 		var i Users
 		if err := rows.Scan(
