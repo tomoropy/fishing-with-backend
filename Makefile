@@ -8,10 +8,12 @@ dropdb:
 		docker exec -it postgres12 dropdb --username=root --owner=root fishing_with
 
 migrateup:
-		migrate -path db/migrate -database "postgresql://root:secret@localhost:5432/fishing_with?sslmode=disable" -verbose up
+		@.	./app.env;	\
+		migrate -path db/migrate -database "$${DB_SOURCE}" -verbose up
 
 migratedown:
-		migrate -path db/migrate -database "postgresql://root:secret@localhost:5432/fishing_with?sslmode=disable" -verbose down
+		@.	./app.env;	\
+		migrate -path db/migrate -database "$${DB_SOURCE}" -verbose down
 
 sqlc:
 		sqlc generate
