@@ -52,10 +52,12 @@ type Rooms struct {
 }
 
 type Users struct {
-	ID           int32          `json:"id"`
-	Name         string         `json:"name"`
-	ProfileText  string         `json:"profileText"`
-	ProfileImage sql.NullString `json:"profileImage"`
-	HeaderImage  sql.NullString `json:"headerImage"`
-	CreatedAt    sql.NullTime   `json:"createdAt"`
+	ID             int32          `json:"id"`
+	Name           string         `json:"name"`
+	ProfileText    string         `json:"profileText"`
+	ProfileImage   sql.NullString `json:"profileImage"`
+	HeaderImage    sql.NullString `json:"headerImage"`
+	CreatedAt      sql.NullTime   `json:"createdAt"`
+	Email          string         `json:"email"`
+	HashedPassword string         `json:"hashedPassword"`
 }
