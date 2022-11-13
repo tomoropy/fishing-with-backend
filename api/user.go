@@ -18,7 +18,7 @@ type createUserRequest struct {
 	Password    string `json:"password" binding:"required,min=6"`
 }
 
-type createUserResponse struct {
+type userResponse struct {
 	ID           int32          `json:"id"`
 	Name         string         `json:"name"`
 	ProfileText  string         `json:"profileText"`
@@ -26,6 +26,16 @@ type createUserResponse struct {
 	HeaderImage  sql.NullString `json:"headerImage"`
 	CreatedAt    sql.NullTime   `json:"createdAt"`
 	Email        string         `json:"email"`
+}
+
+func newUserResponse(user db.Users) userResponse {
+	return userResponse{
+		Name:         user.Name,
+		ProfileText:  user.ProfileText,
+		Email:        user.Email,
+		ProfileImage: user.ProfileImage,
+		HeaderImage:  user.HeaderImage,
+	}
 }
 
 func (server *Server) createUser(ctx *gin.Context) {
@@ -61,18 +71,20 @@ func (server *Server) createUser(ctx *gin.Context) {
 		return
 	}
 
-	rsp := createUserResponse{
-		Name:         user.Name,
-		ProfileText:  user.ProfileText,
-		Email:        user.Email,
-		ProfileImage: user.ProfileImage,
-		HeaderImage:  user.HeaderImage,
-		CreatedAt:    user.CreatedAt,
-	}
+	rsp := newUserResponse(user)
 
 	ctx.JSON(http.StatusOK, rsp)
 }
 
+type loginUserRequest struct {
+	Name     string `json:"name" binding:"required,alphanum,max=10"`
+	Password string `json:"password" binding:"required,min=6"`
+}
+
+type loginUserResponse struct {
+	AccessToken string       `json:"access_token"`
+	User        userResponse `json:"user"`
+}
 type getUserRequest struct {
 	ID int32 `uri:"id" binding:"required,min=1"`
 }
@@ -94,7 +106,7 @@ func (server *Server) getUser(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, user)
+	ctx.JSON(http.StatusOK, newUserResponse(user))
 }
 
 type listUserRequest struct {
@@ -122,4 +134,43 @@ func (server *Server) listUser(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, users)
+}
+
+func (server *Server) loginUser(ctx *gin.Context) {
+	var req loginUserRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	user, err := server.db.GetUserByName(ctx, req.Name)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	err = util.CheckPassword(req.Password, user.HashedPassword)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+
+	accessToken, err := server.tokenMaker.CreateToken(
+		user.Name,
+		server.config.AccessTokenDuration,
+	)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	rsp := loginUserResponse{
+		AccessToken: accessToken,
+		User:        newUserResponse(user),
+	}
+	ctx.JSON(http.StatusOK, rsp)
 }

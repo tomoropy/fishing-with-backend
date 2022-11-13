@@ -17,6 +17,7 @@ type Querier interface {
 	DeleteUser(ctx context.Context, id int32) error
 	GetInvitation(ctx context.Context, id int32) (Invitations, error)
 	GetUser(ctx context.Context, id int32) (Users, error)
+	GetUserByName(ctx context.Context, name string) (Users, error)
 	ListInvitation(ctx context.Context, arg ListInvitationParams) ([]Invitations, error)
 	ListInvitationByUser(ctx context.Context, arg ListInvitationByUserParams) ([]Invitations, error)
 	ListUser(ctx context.Context, arg ListUserParams) ([]Users, error)
