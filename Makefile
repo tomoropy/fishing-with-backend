@@ -8,10 +8,20 @@ dropdb:
 		docker exec -it postgres12 dropdb --username=root --owner=root fishing_with
 
 migrateup:
-		migrate -path db/migrate -database "postgresql://root:secret@localhost:5432/fishing_with?sslmode=disable" -verbose up
+		@.	./app.env;	\
+		migrate -path db/migrate -database "$${DB_SOURCE}" -verbose up
 
 migratedown:
-		migrate -path db/migrate -database "postgresql://root:secret@localhost:5432/fishing_with?sslmode=disable" -verbose down
+		@.	./app.env;	\
+		migrate -path db/migrate -database "$${DB_SOURCE}" -verbose down
+
+migrateup1:
+		@.	./app.env;	\
+		migrate -path db/migrate -database "$${DB_SOURCE}" -verbose up 1
+		
+migratedown1:
+		@.	./app.env;	\
+		migrate -path db/migrate -database "$${DB_SOURCE}" -verbose down 1
 
 sqlc:
 		sqlc generate
@@ -25,5 +35,5 @@ server:
 mock:
 		mockgen -package mockdb -destination db/mock/store.go github.com/tomoropy/fishing-with-backend/db/sqlc Store
 
-.PHONY: postgres createdb dropdb migrateup migratedown sqlc test server mock
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc test server mock migrateup1 migratedown1 
 

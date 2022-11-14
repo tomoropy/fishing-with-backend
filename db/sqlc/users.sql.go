@@ -12,20 +12,29 @@ import (
 const createUser = `-- name: CreateUser :one
 INSERT INTO "users" (
   name,
-  profile_text
+  profile_text,
+  email,
+  hashed_password
 ) VALUES (
-  $1, $2
+  $1, $2, $3, $4
 )
-RETURNING id, name, profile_text, profile_image, header_image, created_at
+RETURNING id, name, profile_text, profile_image, header_image, created_at, email, hashed_password
 `
 
 type CreateUserParams struct {
-	Name        string `json:"name"`
-	ProfileText string `json:"profileText"`
+	Name           string `json:"name"`
+	ProfileText    string `json:"profileText"`
+	Email          string `json:"email"`
+	HashedPassword string `json:"hashedPassword"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Users, error) {
-	row := q.db.QueryRowContext(ctx, createUser, arg.Name, arg.ProfileText)
+	row := q.db.QueryRowContext(ctx, createUser,
+		arg.Name,
+		arg.ProfileText,
+		arg.Email,
+		arg.HashedPassword,
+	)
 	var i Users
 	err := row.Scan(
 		&i.ID,
@@ -34,6 +43,8 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Users, 
 		&i.ProfileImage,
 		&i.HeaderImage,
 		&i.CreatedAt,
+		&i.Email,
+		&i.HashedPassword,
 	)
 	return i, err
 }
@@ -49,7 +60,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id int32) error {
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, name, profile_text, profile_image, header_image, created_at FROM "users"
+SELECT id, name, profile_text, profile_image, header_image, created_at, email, hashed_password FROM "users"
 WHERE id = $1 LIMIT 1
 `
 
@@ -63,12 +74,35 @@ func (q *Queries) GetUser(ctx context.Context, id int32) (Users, error) {
 		&i.ProfileImage,
 		&i.HeaderImage,
 		&i.CreatedAt,
+		&i.Email,
+		&i.HashedPassword,
+	)
+	return i, err
+}
+
+const getUserByName = `-- name: GetUserByName :one
+SELECT id, name, profile_text, profile_image, header_image, created_at, email, hashed_password FROM "users"
+WHERE name = $1 LIMIT 1
+`
+
+func (q *Queries) GetUserByName(ctx context.Context, name string) (Users, error) {
+	row := q.db.QueryRowContext(ctx, getUserByName, name)
+	var i Users
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.ProfileText,
+		&i.ProfileImage,
+		&i.HeaderImage,
+		&i.CreatedAt,
+		&i.Email,
+		&i.HashedPassword,
 	)
 	return i, err
 }
 
 const listUser = `-- name: ListUser :many
-SELECT id, name, profile_text, profile_image, header_image, created_at FROM "users"
+SELECT id, name, profile_text, profile_image, header_image, created_at, email, hashed_password FROM "users"
 ORDER BY id
 LIMIT $1
 OFFSET $2
@@ -95,6 +129,8 @@ func (q *Queries) ListUser(ctx context.Context, arg ListUserParams) ([]Users, er
 			&i.ProfileImage,
 			&i.HeaderImage,
 			&i.CreatedAt,
+			&i.Email,
+			&i.HashedPassword,
 		); err != nil {
 			return nil, err
 		}
@@ -113,7 +149,7 @@ const updateUserName = `-- name: UpdateUserName :one
 UPDATE "users" 
 set name = $2
 WHERE id = $1
-RETURNING id, name, profile_text, profile_image, header_image, created_at
+RETURNING id, name, profile_text, profile_image, header_image, created_at, email, hashed_password
 `
 
 type UpdateUserNameParams struct {
@@ -131,6 +167,8 @@ func (q *Queries) UpdateUserName(ctx context.Context, arg UpdateUserNameParams) 
 		&i.ProfileImage,
 		&i.HeaderImage,
 		&i.CreatedAt,
+		&i.Email,
+		&i.HashedPassword,
 	)
 	return i, err
 }

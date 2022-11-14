@@ -1,0 +1,2 @@
+ALTER TABLE "users" ADD "email" VARCHAR NOT NULL UNIQUE;
+ALTER TABLE "users" ADD "hashed_password" VARCHAR NOT NULL UNIQUE;
