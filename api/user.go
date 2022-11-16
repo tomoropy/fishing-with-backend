@@ -133,7 +133,13 @@ func (server *Server) listUser(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, users)
+	// そのまま返すとHashedPasswordも付いてくるのでnewUserResopnseでpasswordは無くす
+	var withoutAuthTokenUserList []userResponse
+	for _, user := range users {
+			withoutAuthTokenUserList = append(withoutAuthTokenUserList, newUserResponse(user))
+	}
+
+	ctx.JSON(http.StatusOK, withoutAuthTokenUserList)
 }
 
 func (server *Server) loginUser(ctx *gin.Context) {
