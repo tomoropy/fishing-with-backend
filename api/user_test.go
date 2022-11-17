@@ -9,26 +9,32 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 	mockdb "github.com/tomoropy/fishing-with-backend/db/mock"
 	db "github.com/tomoropy/fishing-with-backend/db/sqlc"
+	"github.com/tomoropy/fishing-with-backend/token"
 	"github.com/tomoropy/fishing-with-backend/util"
 )
 
-func TestGetUser(t *testing.T) {
-	user := randomUser()
+func TestGetUserAPI(t *testing.T) {
+	user, _ := randomUser(t)
 
-	testCase := []struct {
+	testCases := []struct {
 		name          string
-		userID        int32
+		ID            int32
+		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
 		buildStubs    func(store *mockdb.MockStore)
-		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
+		checkResponse func(t *testing.T, recoder *httptest.ResponseRecorder)
 	}{
 		{
-			name:   "OK",
-			userID: user.ID,
+			name: "OK",
+			ID:   user.ID,
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Name, time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetUser(gomock.Any(), gomock.Eq(user.ID)).
@@ -40,9 +46,43 @@ func TestGetUser(t *testing.T) {
 				requireBodyMatchUser(t, recorder.Body, user)
 			},
 		},
+		// {
+		// 	name: "UnauthorizedUser",
+		// 	ID:   user.ID,
+		// 	setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+		// 		addAuthorization(t, request, tokenMaker, authorizationTypeBearer, "", time.Minute)
+		// 	},
+		// 	buildStubs: func(store *mockdb.MockStore) {
+		// 		store.EXPECT().
+		// 			GetUser(gomock.Any(), gomock.Eq(user.ID)).
+		// 			Times(1).
+		// 			Return(user, nil)
+		// 	},
+		// 	checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+		// 		require.Equal(t, http.StatusUnauthorized, recorder.Code)
+		// 	},
+		// },
 		{
-			name:   "NotFound",
-			userID: user.ID,
+			name: "NoAuthorization",
+			ID:   user.ID,
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetUser(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusUnauthorized, recorder.Code)
+			},
+		},
+		{
+			name: "NotFound",
+			ID:   user.ID,
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Name, time.Minute)
+			},
+
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetUser(gomock.Any(), gomock.Eq(user.ID)).
@@ -54,8 +94,11 @@ func TestGetUser(t *testing.T) {
 			},
 		},
 		{
-			name:   "InternalError",
-			userID: user.ID,
+			name: "InternalError",
+			ID:   user.ID,
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Name, time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetUser(gomock.Any(), gomock.Eq(user.ID)).
@@ -67,8 +110,11 @@ func TestGetUser(t *testing.T) {
 			},
 		},
 		{
-			name:   "NotFound",
-			userID: 0,
+			name: "InvalidID",
+			ID:   0,
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Name, time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetUser(gomock.Any(), gomock.Any()).
@@ -80,37 +126,43 @@ func TestGetUser(t *testing.T) {
 		},
 	}
 
-	for i := range testCase{
-		tc := testCase[i]
+	for i := range testCases {
+		tc := testCases[i]
 
-		t.Run(tc.name, func(t *testing.T){
+		t.Run(tc.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-		
-			// build stubs
+
 			store := mockdb.NewMockStore(ctrl)
 			tc.buildStubs(store)
-		
-			// start test server and send rquest
+
 			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
-		
-			url := fmt.Sprintf("/users/%d", tc.userID)
+
+			url := fmt.Sprintf("/users/%d", tc.ID)
 			request, err := http.NewRequest(http.MethodGet, url, nil)
 			require.NoError(t, err)
-		
+
+			tc.setupAuth(t, request, server.tokenMaker)
 			server.router.ServeHTTP(recorder, request)
 			tc.checkResponse(t, recorder)
 		})
 	}
 }
 
-func randomUser() db.Users {
-	return db.Users{
-		ID:          int32(util.RandomInt(1, 1000)),
-		Name:        util.RandomUesrName(),
-		ProfileText: util.RandomUesrName(),
+func randomUser(t *testing.T) (user db.Users, password string) {
+	password = util.RandomString(6)
+	hashedPassword, err := util.HashPassword(password)
+	require.NoError(t, err)
+
+	user = db.Users{
+		ID:             int32(util.RandomInt(1, 1000)),
+		Name:           util.RandomString(10),
+		ProfileText:    util.RandomString(100),
+		Email:          util.RandomEmail(),
+		HashedPassword: hashedPassword,
 	}
+	return
 }
 
 func requireBodyMatchUser(t *testing.T, body *bytes.Buffer, user db.Users) {

@@ -15,6 +15,7 @@ type Payload struct {
 }
 
 var ErrExpiredToken = errors.New("token has expired")
+var ErrInvalidToken = errors.New("token is invalid")
 
 func NewPayload(name string, duration time.Duration)(*Payload, error){
 	tokenID, err := uuid.NewRandom()
