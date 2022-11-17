@@ -187,6 +187,24 @@ func (server *Server) updateUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusNoContent, gin.H{})
 }
 
+func (server *Server) deleteUser(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	intID, err := validID(id)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	err = server.db.DeleteUser(ctx, int32(intID))
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusNoContent, gin.H{})
+}
+
 func (server *Server) loginUser(ctx *gin.Context) {
 	var req loginUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {

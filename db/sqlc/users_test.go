@@ -58,19 +58,17 @@ func TestGetUer(t *testing.T) {
 func TestUpdateUser(t *testing.T) {
 	user := createRandomUser(t)
 
-	arg := UpdateUserNameParams{
+	arg := UpdateUserParams{
 		ID:   user.ID,
 		Name: util.RandomString(10),
+		ProfileText: util.RandomString(100),
+		Email: util.RandomEmail(),
+		HashedPassword: util.RandomString(100),
 	}
 
-	updatedUser, err := testQueries.UpdateUserName(context.Background(), arg)
+	err := testQueries.UpdateUser(context.Background(), arg)
 
 	require.NoError(t, err)
-	require.NotEmpty(t, updatedUser)
-
-	require.Equal(t, user.ID, updatedUser.ID)
-	require.Equal(t, user.ProfileText, updatedUser.ProfileText)
-	require.Equal(t, arg.Name, updatedUser.Name)
 }
 
 func TestDeleteUser(t *testing.T) {
