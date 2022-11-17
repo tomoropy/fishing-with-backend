@@ -136,10 +136,55 @@ func (server *Server) listUser(ctx *gin.Context) {
 	// そのまま返すとHashedPasswordも付いてくるのでnewUserResopnseでpasswordは無くす
 	var withoutAuthTokenUserList []userResponse
 	for _, user := range users {
-			withoutAuthTokenUserList = append(withoutAuthTokenUserList, newUserResponse(user))
+		withoutAuthTokenUserList = append(withoutAuthTokenUserList, newUserResponse(user))
 	}
 
 	ctx.JSON(http.StatusOK, withoutAuthTokenUserList)
+}
+
+type updateUserRequest struct {
+	Name        string `json:"name" binding:"required,alphanum,max=10"`
+	ProfileText string `json:"profileText" binding:"required,max=100"`
+	Email       string `json:"email" binding:"required,email"`
+	Password    string `json:"password" binding:"required,min=6"`
+}
+
+func (server *Server) updateUser(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	intID, err := validID(id)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	var req updateUserRequest
+	err = ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	hashedPassword, err := util.HashPassword(req.Password)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	arg := db.UpdateUserParams{
+		ID:             int32(intID),
+		Name:           req.Name,
+		Email:          req.Email,
+		HashedPassword: hashedPassword,
+	}
+
+	err = server.db.UpdateUser(ctx, arg)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusNoContent, gin.H{})
 }
 
 func (server *Server) loginUser(ctx *gin.Context) {

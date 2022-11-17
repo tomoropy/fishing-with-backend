@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/tomoropy/fishing-with-backend/db/sqlc"
@@ -32,17 +33,33 @@ func NewServer(config util.Config, db db.Store) (*Server, error) {
 	return server, nil
 }
 
-func (server *Server)setupRouter(){
+func (server *Server) setupRouter() {
 	router := gin.Default()
 
-	router.POST("/users", server.createUser)
-	router.POST("/users/login", server.loginUser)
+	// 認証不要
+	router.POST("/users", server.createUser)      //signup
+	router.POST("/users/login", server.loginUser) //login
 
 	authRoutes := router.Group("/").Use(authMiddleware(server.tokenMaker))
-	authRoutes.GET("/users/:id", server.getUser)
-	authRoutes.GET("/users", server.listUser)
+
+	// Users
+	authRoutes.GET("/users", server.listUser)          //users
+	authRoutes.GET("/users/:id", server.getUser)       //user show page
+	authRoutes.PUT("/users/:id", server.updateUser)    //update user
+	authRoutes.DELETE("/users/:id", server.deleteUser) //delete user
 
 	server.router = router
+}
+
+func validID(id string) (int, error) {
+	intID, err := strconv.Atoi(id)
+	if err != nil {
+		return 0, fmt.Errorf("id could not convert to integer")
+	}
+	if intID < 1 {
+		return 0, fmt.Errorf("id cannot be under 0")
+	}
+	return intID, nil
 }
 
 func (server *Server) Start(address string) error {

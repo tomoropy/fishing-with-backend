@@ -226,33 +226,18 @@ func (mr *MockStoreMockRecorder) UpdateInvitation(arg0, arg1 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateInvitation", reflect.TypeOf((*MockStore)(nil).UpdateInvitation), arg0, arg1)
 }
 
-// UpdateUserName mocks base method.
-func (m *MockStore) UpdateUserName(arg0 context.Context, arg1 db.UpdateUserNameParams) (db.Users, error) {
+// UpdateUser mocks base method.
+func (m *MockStore) UpdateUser(arg0 context.Context, arg1 db.UpdateUserParams) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateUserName", arg0, arg1)
-	ret0, _ := ret[0].(db.Users)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// UpdateUserName indicates an expected call of UpdateUserName.
-func (mr *MockStoreMockRecorder) UpdateUserName(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserName", reflect.TypeOf((*MockStore)(nil).UpdateUserName), arg0, arg1)
-}
-
-// UpdateUserProfile_text mocks base method.
-func (m *MockStore) UpdateUserProfile_text(arg0 context.Context, arg1 db.UpdateUserProfile_textParams) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateUserProfile_text", arg0, arg1)
+	ret := m.ctrl.Call(m, "UpdateUser", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateUserProfile_text indicates an expected call of UpdateUserProfile_text.
-func (mr *MockStoreMockRecorder) UpdateUserProfile_text(arg0, arg1 interface{}) *gomock.Call {
+// UpdateUser indicates an expected call of UpdateUser.
+func (mr *MockStoreMockRecorder) UpdateUser(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserProfile_text", reflect.TypeOf((*MockStore)(nil).UpdateUserProfile_text), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUser", reflect.TypeOf((*MockStore)(nil).UpdateUser), arg0, arg1)
 }
 
 // UserPhotoList mocks base method.

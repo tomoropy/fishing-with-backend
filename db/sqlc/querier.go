@@ -22,8 +22,7 @@ type Querier interface {
 	ListInvitationByUser(ctx context.Context, arg ListInvitationByUserParams) ([]Invitations, error)
 	ListUser(ctx context.Context, arg ListUserParams) ([]Users, error)
 	UpdateInvitation(ctx context.Context, arg UpdateInvitationParams) error
-	UpdateUserName(ctx context.Context, arg UpdateUserNameParams) (Users, error)
-	UpdateUserProfile_text(ctx context.Context, arg UpdateUserProfile_textParams) error
+	UpdateUser(ctx context.Context, arg UpdateUserParams) error
 	UserPhotoList(ctx context.Context, arg UserPhotoListParams) ([]Photos, error)
 }
 

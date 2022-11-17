@@ -23,15 +23,13 @@ ORDER BY id
 LIMIT $1
 OFFSET $2;
 
--- name: UpdateUserName :one
-UPDATE "users" 
-set name = $2
-WHERE id = $1
-RETURNING *;
-
--- name: UpdateUserProfile_text :exec
-UPDATE "users" 
-set profile_text = $2
+-- name: UpdateUser :exec
+UPDATE "users"
+SET
+  name = $2,
+  profile_text = $3,
+  email = $4,
+  hashed_password = $5
 WHERE id = $1;
 
 -- name: DeleteUser :exec

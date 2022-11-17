@@ -145,46 +145,31 @@ func (q *Queries) ListUser(ctx context.Context, arg ListUserParams) ([]Users, er
 	return items, nil
 }
 
-const updateUserName = `-- name: UpdateUserName :one
-UPDATE "users" 
-set name = $2
+const updateUser = `-- name: UpdateUser :exec
+UPDATE "users"
+SET
+  name = $2,
+  profile_text = $3,
+  email = $4,
+  hashed_password = $5
 WHERE id = $1
-RETURNING id, name, profile_text, profile_image, header_image, created_at, email, hashed_password
 `
 
-type UpdateUserNameParams struct {
-	ID   int32  `json:"id"`
-	Name string `json:"name"`
+type UpdateUserParams struct {
+	ID             int32  `json:"id"`
+	Name           string `json:"name"`
+	ProfileText    string `json:"profileText"`
+	Email          string `json:"email"`
+	HashedPassword string `json:"hashedPassword"`
 }
 
-func (q *Queries) UpdateUserName(ctx context.Context, arg UpdateUserNameParams) (Users, error) {
-	row := q.db.QueryRowContext(ctx, updateUserName, arg.ID, arg.Name)
-	var i Users
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.ProfileText,
-		&i.ProfileImage,
-		&i.HeaderImage,
-		&i.CreatedAt,
-		&i.Email,
-		&i.HashedPassword,
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
+	_, err := q.db.ExecContext(ctx, updateUser,
+		arg.ID,
+		arg.Name,
+		arg.ProfileText,
+		arg.Email,
+		arg.HashedPassword,
 	)
-	return i, err
-}
-
-const updateUserProfile_text = `-- name: UpdateUserProfile_text :exec
-UPDATE "users" 
-set profile_text = $2
-WHERE id = $1
-`
-
-type UpdateUserProfile_textParams struct {
-	ID          int32  `json:"id"`
-	ProfileText string `json:"profileText"`
-}
-
-func (q *Queries) UpdateUserProfile_text(ctx context.Context, arg UpdateUserProfile_textParams) error {
-	_, err := q.db.ExecContext(ctx, updateUserProfile_text, arg.ID, arg.ProfileText)
 	return err
 }
