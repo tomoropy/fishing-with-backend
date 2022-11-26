@@ -54,7 +54,7 @@ type Rooms struct {
 type Users struct {
 	ID             int32          `json:"id"`
 	Name           string         `json:"name"`
-	ProfileText    string         `json:"profileText"`
+	ProfileText    sql.NullString `json:"profileText"`
 	ProfileImage   sql.NullString `json:"profileImage"`
 	HeaderImage    sql.NullString `json:"headerImage"`
 	CreatedAt      sql.NullTime   `json:"createdAt"`

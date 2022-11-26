@@ -7,34 +7,28 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO "users" (
   name,
-  profile_text,
   email,
   hashed_password
 ) VALUES (
-  $1, $2, $3, $4
+  $1, $2, $3
 )
 RETURNING id, name, profile_text, profile_image, header_image, created_at, email, hashed_password
 `
 
 type CreateUserParams struct {
 	Name           string `json:"name"`
-	ProfileText    string `json:"profileText"`
 	Email          string `json:"email"`
 	HashedPassword string `json:"hashedPassword"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Users, error) {
-	row := q.db.QueryRowContext(ctx, createUser,
-		arg.Name,
-		arg.ProfileText,
-		arg.Email,
-		arg.HashedPassword,
-	)
+	row := q.db.QueryRowContext(ctx, createUser, arg.Name, arg.Email, arg.HashedPassword)
 	var i Users
 	err := row.Scan(
 		&i.ID,
@@ -148,28 +142,16 @@ func (q *Queries) ListUser(ctx context.Context, arg ListUserParams) ([]Users, er
 const updateUser = `-- name: UpdateUser :exec
 UPDATE "users"
 SET
-  name = $2,
-  profile_text = $3,
-  email = $4,
-  hashed_password = $5
+  profile_text = $2
 WHERE id = $1
 `
 
 type UpdateUserParams struct {
-	ID             int32  `json:"id"`
-	Name           string `json:"name"`
-	ProfileText    string `json:"profileText"`
-	Email          string `json:"email"`
-	HashedPassword string `json:"hashedPassword"`
+	ID          int32          `json:"id"`
+	ProfileText sql.NullString `json:"profileText"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
-	_, err := q.db.ExecContext(ctx, updateUser,
-		arg.ID,
-		arg.Name,
-		arg.ProfileText,
-		arg.Email,
-		arg.HashedPassword,
-	)
+	_, err := q.db.ExecContext(ctx, updateUser, arg.ID, arg.ProfileText)
 	return err
 }

@@ -1,11 +1,10 @@
 -- name: CreateUser :one
 INSERT INTO "users" (
   name,
-  profile_text,
   email,
   hashed_password
 ) VALUES (
-  $1, $2, $3, $4
+  $1, $2, $3
 )
 RETURNING *;
 
@@ -26,10 +25,7 @@ OFFSET $2;
 -- name: UpdateUser :exec
 UPDATE "users"
 SET
-  name = $2,
-  profile_text = $3,
-  email = $4,
-  hashed_password = $5
+  profile_text = $2
 WHERE id = $1;
 
 -- name: DeleteUser :exec

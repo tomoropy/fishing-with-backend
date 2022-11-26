@@ -16,8 +16,7 @@ func createRandomUser(t *testing.T) Users {
 
 	arg := CreateUserParams{
 		Name:           util.RandomUserName(),
-		ProfileText:    util.RandomUserProfileText(),
-		Email:          util.RandomString(10),
+		Email:          util.RandomEmail(),
 		HashedPassword: hashedPassword,
 	}
 
@@ -26,7 +25,6 @@ func createRandomUser(t *testing.T) Users {
 	require.NotEmpty(t, user)
 
 	require.Equal(t, arg.Name, user.Name)
-	require.Equal(t, arg.ProfileText, user.ProfileText)
 	require.Equal(t, arg.Email, user.Email)
 	require.Equal(t, arg.HashedPassword, user.HashedPassword)
 
@@ -60,10 +58,7 @@ func TestUpdateUser(t *testing.T) {
 
 	arg := UpdateUserParams{
 		ID:   user.ID,
-		Name: util.RandomString(10),
-		ProfileText: util.RandomString(100),
-		Email: util.RandomEmail(),
-		HashedPassword: util.RandomString(100),
+		ProfileText: sql.NullString{String: util.RandomString(100), Valid: true},
 	}
 
 	err := testQueries.UpdateUser(context.Background(), arg)

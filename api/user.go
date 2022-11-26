@@ -4,37 +4,40 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 	db "github.com/tomoropy/fishing-with-backend/db/sqlc"
+	"github.com/tomoropy/fishing-with-backend/token"
 	"github.com/tomoropy/fishing-with-backend/util"
 )
 
 type createUserRequest struct {
-	Name        string `json:"name" binding:"required,alphanum,max=10"`
-	ProfileText string `json:"profileText" binding:"required,max=100"`
-	Email       string `json:"email" binding:"required,email"`
-	Password    string `json:"password" binding:"required,min=6"`
+	Name     string `json:"name" binding:"required,alphanum,max=10"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=6"`
 }
 
 type userResponse struct {
-	ID           int32          `json:"id"`
-	Name         string         `json:"name"`
-	ProfileText  string         `json:"profileText"`
-	ProfileImage sql.NullString `json:"profileImage"`
-	HeaderImage  sql.NullString `json:"headerImage"`
-	CreatedAt    sql.NullTime   `json:"createdAt"`
-	Email        string         `json:"email"`
+	ID           int32     `json:"id"`
+	Name         string    `json:"name"`
+	ProfileText  string    `json:"profileText"`
+	ProfileImage string    `json:"profileImage"`
+	HeaderImage  string    `json:"headerImage"`
+	CreatedAt    time.Time `json:"createdAt"`
+	Email        string    `json:"email"`
 }
 
 func newUserResponse(user db.Users) userResponse {
 	return userResponse{
+		ID:           user.ID,
 		Name:         user.Name,
-		ProfileText:  user.ProfileText,
+		ProfileText:  user.ProfileText.String,
 		Email:        user.Email,
-		ProfileImage: user.ProfileImage,
-		HeaderImage:  user.HeaderImage,
+		ProfileImage: user.ProfileImage.String,
+		HeaderImage:  user.HeaderImage.String,
+		CreatedAt:    user.CreatedAt.Time,
 	}
 }
 
@@ -53,7 +56,6 @@ func (server *Server) createUser(ctx *gin.Context) {
 
 	arg := db.CreateUserParams{
 		Name:           req.Name,
-		ProfileText:    req.ProfileText,
 		Email:          req.Email,
 		HashedPassword: hashedPassword,
 	}
@@ -109,6 +111,23 @@ func (server *Server) getUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, newUserResponse(user))
 }
 
+// auth User
+func (server *Server) myInfo(ctx *gin.Context) {
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
+	user, err := server.db.GetUserByName(ctx, authPayload.Name)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, newUserResponse(user))
+}
+
 type listUserRequest struct {
 	PageID   int32 `form:"page_id" binding:"required,min=1"`
 	PageSize int32 `form:"page_size" binding:"required,min=5,max=10"`
@@ -143,18 +162,14 @@ func (server *Server) listUser(ctx *gin.Context) {
 }
 
 type updateUserRequest struct {
-	Name        string `json:"name" binding:"required,alphanum,max=10"`
 	ProfileText string `json:"profileText" binding:"required,max=100"`
-	Email       string `json:"email" binding:"required,email"`
-	Password    string `json:"password" binding:"required,min=6"`
 }
 
 func (server *Server) updateUser(ctx *gin.Context) {
-	id := ctx.Param("id")
-
-	intID, err := validID(id)
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+	user, err := server.db.GetUserByName(ctx, authPayload.Name)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
 		return
 	}
 
@@ -165,17 +180,15 @@ func (server *Server) updateUser(ctx *gin.Context) {
 		return
 	}
 
-	hashedPassword, err := util.HashPassword(req.Password)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
+	// hashedPassword, err := util.HashPassword(req.Password)
+	// if err != nil {
+	// 	ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+	// 	return
+	// }
 
 	arg := db.UpdateUserParams{
-		ID:             int32(intID),
-		Name:           req.Name,
-		Email:          req.Email,
-		HashedPassword: hashedPassword,
+		ID:          int32(user.ID),
+		ProfileText: sql.NullString{String: req.ProfileText, Valid: true},
 	}
 
 	err = server.db.UpdateUser(ctx, arg)
@@ -188,15 +201,16 @@ func (server *Server) updateUser(ctx *gin.Context) {
 }
 
 func (server *Server) deleteUser(ctx *gin.Context) {
-	id := ctx.Param("id")
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
 
-	intID, err := validID(id)
+	user, err := server.db.GetUserByName(ctx, authPayload.Name)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	err = server.db.DeleteUser(ctx, int32(intID))
+	err = server.db.DeleteUser(ctx, int32(user.ID))
+
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return

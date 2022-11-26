@@ -62,20 +62,20 @@ func TestGetUserAPI(t *testing.T) {
 		// 		require.Equal(t, http.StatusUnauthorized, recorder.Code)
 		// 	},
 		// },
-		{
-			name: "NoAuthorization",
-			ID:   user.ID,
-			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
-			},
-			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().
-					GetUser(gomock.Any(), gomock.Any()).
-					Times(0)
-			},
-			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusUnauthorized, recorder.Code)
-			},
-		},
+		// {
+		// 	name: "NoAuthorization",
+		// 	ID:   user.ID,
+		// 	setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+		// 	},
+		// 	buildStubs: func(store *mockdb.MockStore) {
+		// 		store.EXPECT().
+		// 			GetUser(gomock.Any(), gomock.Any()).
+		// 			Times(0)
+		// 	},
+		// 	checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+		// 		require.Equal(t, http.StatusUnauthorized, recorder.Code)
+		// 	},
+		// },
 		{
 			name: "NotFound",
 			ID:   user.ID,
@@ -158,7 +158,7 @@ func randomUser(t *testing.T) (user db.Users, password string) {
 	user = db.Users{
 		ID:             int32(util.RandomInt(1, 1000)),
 		Name:           util.RandomString(10),
-		ProfileText:    util.RandomString(100),
+		// ProfileText:    util.RandomString(100),
 		Email:          util.RandomEmail(),
 		HashedPassword: hashedPassword,
 	}

@@ -3,7 +3,9 @@ package api
 import (
 	"fmt"
 	"strconv"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/tomoropy/fishing-with-backend/db/sqlc"
 	db "github.com/tomoropy/fishing-with-backend/db/sqlc"
@@ -36,17 +38,48 @@ func NewServer(config util.Config, db db.Store) (*Server, error) {
 func (server *Server) setupRouter() {
 	router := gin.Default()
 
+	// ここからCorsの設定
+  router.Use(cors.New(cors.Config{
+    // アクセスを許可したいアクセス元
+    AllowOrigins: []string{
+      "http://localhost:3000",
+    },
+    // アクセスを許可したいHTTPメソッド
+    AllowMethods: []string{
+        "POST",
+				"PUT",
+        "GET",
+				"DELETE",
+        "OPTIONS",
+    },
+    // 許可したいHTTPリクエストヘッダ
+    AllowHeaders: []string{
+        "Access-Control-Allow-Credentials",
+        "Access-Control-Allow-Headers",
+        "Content-Type",
+        "Content-Length",
+        "Accept-Encoding",
+        "Authorization",
+    },
+    // cookieなどの情報を必要とするかどうか
+    AllowCredentials: true,
+    // preflightリクエストの結果をキャッシュする時間
+    MaxAge: 24 * time.Hour,
+  }))
+
 	// 認証不要
 	router.POST("/users", server.createUser)      //signup
 	router.POST("/users/login", server.loginUser) //login
+	router.GET("/users", server.listUser)         //users
+	router.GET("/users/:id", server.getUser)      //user show page
 
 	authRoutes := router.Group("/").Use(authMiddleware(server.tokenMaker))
 
+	// 要 認証
 	// Users
-	authRoutes.GET("/users", server.listUser)          //users
-	authRoutes.GET("/users/:id", server.getUser)       //user show page
-	authRoutes.PUT("/users/:id", server.updateUser)    //update user
-	authRoutes.DELETE("/users/:id", server.deleteUser) //delete user
+	authRoutes.GET("/users/me", server.myInfo)     //auth user
+	authRoutes.PUT("/users", server.updateUser)    //update user
+	authRoutes.DELETE("/users", server.deleteUser) //delete user
 
 	server.router = router
 }

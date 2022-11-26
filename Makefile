@@ -5,7 +5,7 @@ createdb:
 		docker exec -it postgres12 createdb --username=root --owner=root fishing_with
 
 dropdb:
-		docker exec -it postgres12 dropdb --username=root --owner=root fishing_with
+		docker exec -it postgres12 dropdb -U root fishing_with
 
 migrateup:
 		@.	./app.env;	\

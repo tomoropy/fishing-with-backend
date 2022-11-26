@@ -3,7 +3,7 @@ CREATE TABLE "users" (
   "name" varchar NOT NULL,
   "email" varchar UNIQUE NOT NULL,
   "hashed_password" varchar UNIQUE NOT NULL,
-  "profile_text" varchar NOT NULL,
+  "profile_text" varchar,
   "profile_image" varchar,
   "header_image" varchar,
   "created_at" timestamptz DEFAULT (now())
